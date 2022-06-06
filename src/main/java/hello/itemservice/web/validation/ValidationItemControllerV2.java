@@ -8,7 +8,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 public class ValidationItemControllerV2 {
 
     private final ItemRepository itemRepository;
+    private final ItemValidator itemValidator;
+    
+    @InitBinder
+    public void init(WebDataBinder dataBinder) {
+    	dataBinder.addValidators(itemValidator);
+    }
 
     @GetMapping
     public String items(Model model) {
@@ -120,8 +129,8 @@ public class ValidationItemControllerV2 {
 //    @PostMapping("/add")
     public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
     	
-    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
-    	log.info("target={}", bindingResult.getTarget());
+//    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
+//    	log.info("target={}", bindingResult.getTarget());
     	
     	//검증 로직
     	if (!StringUtils.hasText(item.getItemName())) {
@@ -155,11 +164,11 @@ public class ValidationItemControllerV2 {
         return "redirect:/validation/v2/items/{itemId}";
     }
     
-    @PostMapping("/add")
+//    @PostMapping("/add")
     public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
     	
-//    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
-//    	log.info("target={}", bindingResult.getTarget());
+    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
+    	log.info("target={}", bindingResult.getTarget());
     	
     	//검증 로직
     	if (!StringUtils.hasText(item.getItemName())) {
@@ -179,6 +188,47 @@ public class ValidationItemControllerV2 {
     			bindingResult.reject("totalPriceMin", new Object[] {1000, resultPrice}, null);
 ;    		}
     	}
+    	
+    	//검증에 실패하면 다시 입력 폼으로
+    	if (bindingResult.hasErrors()) {
+    		log.info("errors = {} ", bindingResult);
+    		return "validation/v2/addForm";
+    	}
+    	
+    	//성공로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+    
+//    @PostMapping("/add")
+    public String addItemV5(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    	
+    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
+    	log.info("target={}", bindingResult.getTarget());
+    	
+    	itemValidator.validate(item,  bindingResult);
+    	
+    	//검증에 실패하면 다시 입력 폼으로
+    	if (bindingResult.hasErrors()) {
+    		log.info("errors = {} ", bindingResult);
+    		return "validation/v2/addForm";
+    	}
+    	
+    	//성공로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+    
+    @PostMapping("/add")
+    public String addItemV6(@Validated @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    	
+    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
+    	log.info("target={}", bindingResult.getTarget());
+    	
     	
     	//검증에 실패하면 다시 입력 폼으로
     	if (bindingResult.hasErrors()) {
