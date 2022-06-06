@@ -8,6 +8,10 @@
         .container {
             max-width: 560px;
         }
+        .field-error {
+        	border-color: #dc3545;
+        	color: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -28,15 +32,27 @@
         </div>
         <div>
             <label for="itemName" th:text="#{label.item.itemName}">상품명</label>
-            <input type="text" id="itemName" th:field="*{itemName}" class="form-control">
+            <input type="text" id="itemName" th:field="*{itemName}" 
+            th:errorclass="field-error" class="form-control">
+            <div class="field-error" th:errors="*{itemName}">
+            	상품명 오류
+            </div>
         </div>
         <div>
             <label for="price" th:text="#{label.item.price}">가격</label>
-            <input type="text" id="price" th:field="*{price}" class="form-control">
+            <input type="text" id="price" th:field="*{price}" 
+            th:errorclass="field-error" class="form-control">
+            <div class="field-error" th:errors="*{price}">
+            	가격 오류
+            </div>
         </div>
         <div>
             <label for="quantity" th:text="#{label.item.quantity}">수량</label>
-            <input type="text" id="quantity" th:field="*{quantity}" class="form-control">
+            <input type="text" id="quantity" th:field="*{quantity}"
+            th:errorclass="field-error" class="form-control">
+            <div class="field-error" th:errors="*{quantity}">
+        		수량 오류
+        	</div>
         </div>
 
         <hr class="my-4">
@@ -47,7 +63,7 @@
             </div>
             <div class="col">
                 <button class="w-100 btn btn-secondary btn-lg"
-                        onclick="location.href='item.html'"
+                        onclick="location.href='items.html'"
                         th:onclick="|location.href='@{/validation/v3/items/{itemId}(itemId=${item.id})}'|"
                         type="button" th:text="#{button.cancel}">취소</button>
             </div>

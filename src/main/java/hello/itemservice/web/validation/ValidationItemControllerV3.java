@@ -15,6 +15,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
+import hello.itemservice.domain.item.SaveCheck;
+import hello.itemservice.domain.item.UpdateCheck;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,8 +48,35 @@ public class ValidationItemControllerV3 {
         return "validation/v3/addForm";
     }
     
-    @PostMapping("/add")
+//    @PostMapping("/add")
     public String addItem(@Validated @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    	
+    	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
+    	log.info("target={}", bindingResult.getTarget());
+    	
+    	//특정 필드가 아닌 복합 룰 검증
+    	if (item.getPrice() != null && item.getQuantity() != null) {
+    		int resultPrice = item.getPrice() * item.getQuantity();
+    		if (resultPrice < 10000) {
+    			bindingResult.reject("totalPriceMin", new Object[] {1000, resultPrice}, null);
+;    		}
+    	}
+    	
+    	//검증에 실패하면 다시 입력 폼으로
+    	if (bindingResult.hasErrors()) {
+    		log.info("errors = {} ", bindingResult);
+    		return "validation/v3/addForm";
+    	}
+    	
+    	//성공로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v3/items/{itemId}";
+    }
+    
+    @PostMapping("/add")
+    public String addItemV2(@Validated(SaveCheck.class) @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
     	
     	log.info("objectName={}", bindingResult.getObjectName()); //오브젝트 내용을 가지고 있다. 
     	log.info("target={}", bindingResult.getTarget());
@@ -80,7 +109,7 @@ public class ValidationItemControllerV3 {
         return "validation/v3/editForm";
     }
 
-    @PostMapping("/{itemId}/edit")
+//    @PostMapping("/{itemId}/edit")
     public String edit(@PathVariable Long itemId, @Validated @ModelAttribute Item item, BindingResult bindingResult) {
         itemRepository.update(itemId, item);
         
@@ -95,13 +124,29 @@ public class ValidationItemControllerV3 {
     	//검증에 실패하면 다시 입력 폼으로
     	if (bindingResult.hasErrors()) {
     		log.info("errors = {} ", bindingResult);
-    		return "validation/v3/{itemId}/edit";
+    		return "validation/v3/editForm";
     	}
-    	
-        
         return "redirect:/validation/v3/items/{itemId}";
+    }
+    
+    @PostMapping("/{itemId}/edit")
+    public String editV2(@PathVariable Long itemId, @Validated(UpdateCheck.class) @ModelAttribute Item item, BindingResult bindingResult) {
+        itemRepository.update(itemId, item);
         
+        //특정 필드가 아닌 복합 룰 검증
+    	if (item.getPrice() != null && item.getQuantity() != null) {
+    		int resultPrice = item.getPrice() * item.getQuantity();
+    		if (resultPrice < 10000) {
+    			bindingResult.reject("totalPriceMin", new Object[] {1000, resultPrice}, null);
+;    		}
+    	}
         
+    	//검증에 실패하면 다시 입력 폼으로
+    	if (bindingResult.hasErrors()) {
+    		log.info("errors = {} ", bindingResult);
+    		return "validation/v3/editForm";
+    	}
+        return "redirect:/validation/v3/items/{itemId}";
     }
 
 }
